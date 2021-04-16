@@ -11,7 +11,7 @@ pub struct MemoryManager<T1 : PageOp, T2 : HeapOp<T1>> {
     memory : ContentMutex<T2>,
 }
 
-impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp<T1, T2> for MemoryManager<T1, T2> {
+impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
     fn new(
         heap_start : usize,
         kernel_page_num : usize,

@@ -29,7 +29,7 @@ pub trait HeapOp<T:PageOp> {
 
 /// ## 内存管理接口
 /// 统御堆内存、页面管理，作为对外提供功能的接口
-pub trait MemoryOp<T1:PageOp, T2:HeapOp<T1>> {
+pub trait MemoryOp {
     fn new(
         heap_start : usize,
         kernel_page_num : usize,
