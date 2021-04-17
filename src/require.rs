@@ -30,12 +30,7 @@ pub trait HeapOp<T:PageOp> {
 /// ## 内存管理接口
 /// 统御堆内存、页面管理，作为对外提供功能的接口
 pub trait MemoryOp {
-    fn new(
-        heap_start : usize,
-        kernel_page_num : usize,
-        page_size : usize,
-        memory_end : usize
-    )->Self;
+    fn free_memory(&mut self, addr : *mut u8);
 
     fn kernel_page(&mut self, num : usize)->Option<*mut u8>;
 
@@ -45,13 +40,9 @@ pub trait MemoryOp {
 
     fn alloc_memory(&mut self, size : usize, is_kernel : bool)->Option<*mut u8>;
 
-    fn free_kernel_memory(&mut self, addr : *mut u8);
-
-    fn free_user_memory(&mut self, addr : *mut u8);
-
     fn print(&mut self);
 }
-
+#[allow(clippy::drop_bounds)]
 pub trait AutoMemory<T1:Copy> : Drop {
     fn new(size : usize)->Self;
 

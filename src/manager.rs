@@ -1,5 +1,12 @@
 //! # 内存管理器
-//! 处理内存请求（页面、堆内存），这是此库提供的实现
+//! 处理内存请求（页面、堆内存），这是此库提供的默认实现实现
+//! ## 使用示例
+//! ```rust
+//! let mgr = MemoryManager::new(0, 128, 4096, 0x100000);
+//! let addr = mgr.alloc_memory(4, true);
+//! *addr = 9;
+//! mgr.free_kernel_memory(addr);
+//! ```
 //! 
 //! 2021年4月14日 zg
 
@@ -7,12 +14,14 @@ use tisu_sync::ContentMutex;
 use crate::{MemoryOp, require::{HeapOp, PageOp}};
 
 pub struct MemoryManager<T1 : PageOp, T2 : HeapOp<T1>> {
+    kernel_start : *mut u8,
+    user_start : *mut u8,
     page : ContentMutex<T1>,
     memory : ContentMutex<T2>,
 }
 
-impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
-    fn new(
+impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryManager<T1, T2> {
+    pub fn new(
         heap_start : usize,
         kernel_page_num : usize,
         page_size : usize,
@@ -23,11 +32,16 @@ impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
             user_heap, memory_end, page_size);
         let p = page.clone();
         Self {
+            kernel_start : heap_start as *mut u8,
+            user_start : user_heap as *mut u8,
             page: ContentMutex::new(page),
             memory: ContentMutex::new(T2::new(p)),
         }
     }
 
+}
+
+impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
     fn kernel_page(&mut self, num : usize)->Option<*mut u8> {
         self.page.lock().alloc_kernel_page(num)
     }
@@ -50,12 +64,16 @@ impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
         }
     }
 
-    fn free_kernel_memory(&mut self, addr : *mut u8) {
-        self.memory.lock().free_kernel_memory(addr);
-    }
-
-    fn free_user_memory(&mut self, addr : *mut u8) {
-        self.memory.lock().free_user_memory(addr);
+    fn free_memory(&mut self, addr : *mut u8) {
+        if addr >= self.kernel_start && addr < self.user_start {
+            self.memory.lock().free_kernel_memory(addr);
+        }
+        else if addr >= self.user_start {
+            self.memory.lock().free_user_memory(addr);
+        }
+        else {
+            panic!("free memory error addr {:x}", addr as usize);
+        }
     }
 
     fn print(&mut self) {

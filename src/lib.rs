@@ -1,16 +1,12 @@
 //! # 内存管理器
-//! 提供页面、堆内存的管理功能
-//! 提供页面大小；内核、用户内存范围即可使用
-//! 同时提供一个自动释放的内存块 Block
+//! MemoryOp 为内存使用接口
+//! tisu-memory 提供默认实现
+//! 其中 PageOp、HeapOp 为默认实现 MemoryManager 的接口要求
 //! 
 //! 2021年4月14日 zg
 
 #![no_std]
-#![feature(
-    panic_info_message,
-)]
 
-mod lang_items;
 mod require;
 mod page;
 mod heap;
