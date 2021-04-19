@@ -8,7 +8,7 @@ pub struct Heap<T:PageOp> {
     page_manager : T,
     user_allocator : Option<*mut MemoryPool>,
     kernel_allocator : Option<*mut MemoryPool>,
-    mutex : Mutex,
+    mutex : SpinMutex,
 }
 
 impl<T:PageOp> Heap<T> {
@@ -225,7 +225,7 @@ impl<T:PageOp> HeapOp<T> for Heap<T> {
             page_manager : page,
             kernel_allocator : None,
             user_allocator : None,
-            mutex : Mutex::new(),
+            mutex : SpinMutex::new(),
         }
     }
 
@@ -324,6 +324,6 @@ const MEMORY_SIZE_INSIDE : usize = 256;
 
 use core::{mem::size_of};
 
-use tisu_sync::Mutex;
+use tisu_sync::SpinMutex;
 
 use crate::{bitmap::Bitmap, require::{HeapOp, PageOp}};
