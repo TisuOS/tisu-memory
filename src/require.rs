@@ -43,7 +43,7 @@ pub trait MemoryOp {
     fn print(&mut self);
 }
 #[allow(clippy::drop_bounds)]
-pub trait AutoMemory<T1:Copy> : Drop {
+pub trait AutoMemory<T1:Copy> {
     fn new(size : usize)->Self;
 
     fn get(&self, idx : usize)->Option<T1>;
