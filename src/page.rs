@@ -88,10 +88,10 @@ impl PageOp for PageManager {
 		    kernel_page_num,
 			kernel_start : kmem_start,
 		    user_page : ContentMutex::new(user_page),
-		    user_page_num: (total_num - kernel_page_num) / page_size,
+		    user_page_num: total_num - kernel_page_num,
 			user_start : umem_start,
 		    total_num,
-			memory_end : total_num * page_size,
+			memory_end : total_mem,
 		    page_size,
 		};
 		rt.init_page();
@@ -139,34 +139,37 @@ impl PageOp for PageManager {
 					ptr[idx].take();
 				}
 				ptr[i].end();
-				let t = (*ptr).as_ptr();
-				let addr = ((i + 1 - cnt) * self.page_size + t as usize) as *mut u8;
+				let addr = ((i + 1 - cnt) * self.page_size + self.user_start) as *mut u8;
 				self.clear(addr, num);
 				return Some(addr);
 			}
 		}
-		None
+		panic!("cnt {} num {} user num {}", cnt, num, self.user_page_num);
     }
 
     fn free_page(&mut self, addr : *mut u8) {
-		let mut ptr;
-		let mut idx;
 		if addr as usize >= self.kernel_start && (addr as usize) < self.user_start {
-			idx = (addr as usize - self.kernel_start) / self.page_size;
-			ptr = self.kernel_page.lock();
+			let mut idx = (addr as usize - self.kernel_start) / self.page_size;
+			let mut ptr = self.kernel_page.lock();
+			while !ptr[idx].is_end() {
+				ptr[idx].free();
+				idx += 1;
+			}
+			ptr[idx].free();
 		}
 		else if addr as usize >= self.user_start && (addr as usize) < self.memory_end {
-			idx = (addr as usize - self.user_start) / self.page_size;
-			ptr = self.user_page.lock();
+			let mut idx = (addr as usize - self.user_start) / self.page_size;
+			let mut ptr = self.user_page.lock();
+			while !ptr[idx].is_end() {
+				ptr[idx].free();
+				idx += 1;
+			}
+			ptr[idx].free();
 		}
 		else {
-			panic!("page out of range: {:x}", addr as usize);
+			panic!("page out of range: {:x}, kernel {:x}, user {:x} end {:x}",
+				addr as usize, self.kernel_start, self.user_start, self.memory_end);
 		}
-		while !ptr[idx].is_end() {
-			ptr[idx].free();
-			idx += 1;
-		}
-		ptr[idx].free();
     }
 
     fn page_size(&self)->usize {

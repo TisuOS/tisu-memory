@@ -43,7 +43,9 @@ impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryManager<T1, T2> {
 
 impl<T1 : PageOp, T2 : HeapOp<T1>> MemoryOp for MemoryManager<T1, T2> {
     fn kernel_page(&mut self, num : usize)->Option<*mut u8> {
-        self.page.lock().alloc_kernel_page(num)
+        let rt = self.page.lock().alloc_kernel_page(num).unwrap();
+        assert!(rt as usize != 0x200_0000);
+        Some(rt)
     }
 
     fn user_page(&mut self, num : usize)->Option<*mut u8> {
