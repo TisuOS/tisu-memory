@@ -11,7 +11,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 tisu-sync = { path = "../tisu-sync/" }
-# tisu-sync = { git = "https://github.com/TisuOS/tisu-sync" }
+# tisu-sync = { git = "https://github.com/TisuOS/tisu-sync", tag = "v1.0" }
 
 [profile.dev]
 panic = "abort"
