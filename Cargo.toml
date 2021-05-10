@@ -10,8 +10,8 @@ edition = "2018"
 crate-type = ["rlib"]
 
 [dependencies]
-tisu-sync = { path = "../tisu-sync/" }
-# tisu-sync = { git = "https://github.com/TisuOS/tisu-sync", tag = "v1.0" }
+# tisu-sync = { path = "../tisu-sync/" }
+tisu-sync = { git = "https://github.com/TisuOS/tisu-sync", tag = "v2.0" }
 
 [profile.dev]
 panic = "abort"
