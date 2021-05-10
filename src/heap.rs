@@ -8,7 +8,6 @@ pub struct Heap<T:PageOp> {
     page_manager : T,
     user_allocator : Option<*mut MemoryPool>,
     kernel_allocator : Option<*mut MemoryPool>,
-    mutex : SpinMutex,
 }
 
 impl<T:PageOp> Heap<T> {
@@ -225,34 +224,25 @@ impl<T:PageOp> HeapOp<T> for Heap<T> {
             page_manager : page,
             kernel_allocator : None,
             user_allocator : None,
-            mutex : SpinMutex::new(),
         }
     }
 
     fn alloc_kernel_memory(&mut self, size : usize)->Option<*mut u8> {
-        self.mutex.lock();
         let rt = self.alloc(size, true);
-        self.mutex.unlock();
         rt
     }
 
     fn alloc_user_memory(&mut self, size : usize)->Option<*mut u8> {
-        self.mutex.lock();
         let rt = self.alloc(size, false);
-        self.mutex.unlock();
         rt
     }
 
     fn free_kernel_memory(&mut self, addr : *mut u8) {
-        self.mutex.lock();
         self.free(addr, true);
-        self.mutex.unlock();
     }
 
     fn free_user_memory(&mut self, addr : *mut u8) {
-        self.mutex.lock();
         self.free(addr, false);
-        self.mutex.unlock();
     }
 
     fn print(&self) {
@@ -323,7 +313,5 @@ const MEMORY_SIZE_INSIDE : usize = 256;
 
 
 use core::{mem::size_of};
-
-use tisu_sync::SpinMutex;
 
 use crate::{bitmap::Bitmap, require::{HeapOp, PageOp}};

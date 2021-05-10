@@ -5,16 +5,14 @@
 
 use core::ptr::slice_from_raw_parts;
 
-use tisu_sync::{ContentMutex};
-
 use crate::require::PageOp;
 
 
 pub struct PageManager {
-	kernel_page : ContentMutex<&'static mut [Page]>,
+	kernel_page : &'static mut [Page],
 	kernel_page_num : usize,
 	kernel_start : usize,
-	user_page : ContentMutex<&'static mut [Page]>,
+	user_page : &'static mut [Page],
 	user_page_num : usize,
 	user_start : usize,
 	total_num : usize,
@@ -33,14 +31,14 @@ impl PageManager {
 
 	fn init_page(&mut self) {
 		let rev_num = (self.total_num + self.page_size - 1) / self.page_size;
-		let ptr = &mut self.kernel_page.lock();
+		let ptr = &mut self.kernel_page;
 		for i in 0..rev_num {
 			ptr[i].take();
 		}
 		for i in rev_num..self.kernel_page_num {
 			ptr[i].free();
 		}
-		let ptr = &mut self.user_page.lock();
+		let ptr = &mut self.user_page;
 		for i in 0..self.user_page_num {
 			ptr[i].free();
 		}
@@ -53,13 +51,13 @@ impl PageOp for PageManager {
 		let user_page;
 		unsafe {
 			let t = self as *const Self as *mut Self;
-			kernel_page = &mut *((*t).kernel_page.lock().as_ref() as *const [Page] as *mut [Page]);
-			user_page = &mut *((*t).user_page.lock().as_ref() as *const [Page] as *mut [Page]);
+			kernel_page = &mut *((*t).kernel_page.as_ref() as *const [Page] as *mut [Page]);
+			user_page = &mut *((*t).user_page.as_ref() as *const [Page] as *mut [Page]);
 		}
         Self {
-            kernel_page : ContentMutex::new(kernel_page),
+            kernel_page : kernel_page,
             kernel_page_num: self.kernel_page_num,
-            user_page : ContentMutex::new(user_page),
+            user_page : user_page,
 			kernel_start : self.kernel_start,
             user_page_num: self.user_page_num,
             user_start: self.user_start,
@@ -84,10 +82,10 @@ impl PageOp for PageManager {
 		let user_page = unsafe{&mut *(user_page)};
 		
 		let mut rt = Self {
-		    kernel_page : ContentMutex::new(kernel_page),
+		    kernel_page : kernel_page,
 		    kernel_page_num,
 			kernel_start : kmem_start,
-		    user_page : ContentMutex::new(user_page),
+		    user_page : user_page,
 		    user_page_num: total_num - kernel_page_num,
 			user_start : umem_start,
 		    total_num,
@@ -100,7 +98,7 @@ impl PageOp for PageManager {
 
     fn alloc_kernel_page(&mut self, num : usize)->Option<*mut u8> {
 		assert!(num > 0);
-		let ptr = &mut self.kernel_page.lock();
+		let ptr = &mut self.kernel_page;
 		let mut cnt = 0;
 		for i in 0..self.kernel_page_num {
 			if ptr[i].is_free() {
@@ -125,7 +123,7 @@ impl PageOp for PageManager {
 
     fn alloc_user_page(&mut self, num : usize)->Option<*mut u8> {
 		assert!(num > 0);
-		let mut ptr = self.user_page.lock();
+		let ptr = &mut self.user_page;
 		let mut cnt = 0;
 		for i in 0..self.user_page_num {
 			if ptr[i].is_free() {
@@ -150,7 +148,7 @@ impl PageOp for PageManager {
     fn free_page(&mut self, addr : *mut u8) {
 		if addr as usize >= self.kernel_start && (addr as usize) < self.user_start {
 			let mut idx = (addr as usize - self.kernel_start) / self.page_size;
-			let mut ptr = self.kernel_page.lock();
+			let ptr = &mut self.kernel_page;
 			while !ptr[idx].is_end() {
 				ptr[idx].free();
 				idx += 1;
@@ -159,7 +157,7 @@ impl PageOp for PageManager {
 		}
 		else if addr as usize >= self.user_start && (addr as usize) < self.memory_end {
 			let mut idx = (addr as usize - self.user_start) / self.page_size;
-			let mut ptr = self.user_page.lock();
+			let ptr = &mut self.user_page;
 			while !ptr[idx].is_end() {
 				ptr[idx].free();
 				idx += 1;
@@ -178,7 +176,7 @@ impl PageOp for PageManager {
 
     fn print(&self) {
 		let mut _cnt = 0;
-		let ptr = &self.kernel_page.lock();
+		let ptr = &self.kernel_page;
 		for i in 0..self.kernel_page_num {
 			if !ptr[i].is_free() {
 				_cnt += 1;
