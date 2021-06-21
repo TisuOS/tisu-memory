@@ -150,18 +150,22 @@ impl PageOp for PageManager {
 			let mut idx = (addr as usize - self.kernel_start) / self.page_size;
 			let ptr = &mut self.kernel_page;
 			while !ptr[idx].is_end() {
+				assert!(!ptr[idx].is_free());
 				ptr[idx].free();
 				idx += 1;
 			}
+			assert!(!ptr[idx].is_free());
 			ptr[idx].free();
 		}
 		else if addr as usize >= self.user_start && (addr as usize) < self.memory_end {
 			let mut idx = (addr as usize - self.user_start) / self.page_size;
 			let ptr = &mut self.user_page;
 			while !ptr[idx].is_end() {
+				assert!(!ptr[idx].is_free());
 				ptr[idx].free();
 				idx += 1;
 			}
+			assert!(!ptr[idx].is_free());
 			ptr[idx].free();
 		}
 		else {

@@ -13,9 +13,8 @@ pub struct Heap<T:PageOp> {
 impl<T:PageOp> Heap<T> {
     fn alloc(&mut self, size : usize, is_kernel : bool)->Option<*mut u8> {
         let size = align(size);
-        let node = self.find_first_contain(size, is_kernel);
         let rt;
-        if let Some(node) = node {
+        if let Some(node) = self.find_first_contain(size, is_kernel) {
             rt = node;
         }
         // 没有足够空间，申请新的
@@ -40,7 +39,7 @@ impl<T:PageOp> Heap<T> {
         let free_cnt;
         let total_size = num_alloc * self.page_manager.page_size();
         let struct_size = (total_size / size + 7) / 8 + size_of::<MemoryPool>();
-        let phy_addr ;
+        let phy_addr;
         if is_kernel {
             phy_addr = self.page_manager.alloc_kernel_page(num_alloc).unwrap();
         }
@@ -48,13 +47,8 @@ impl<T:PageOp> Heap<T> {
             phy_addr = self.page_manager.alloc_user_page(num_alloc).unwrap();
         }
         // 块的粒度较大时另外存放结构体
-        if size > struct_size * 2 {
-            if is_kernel {
-                struct_addr = self.alloc(struct_size, true).unwrap()
-            }
-            else {
-                struct_addr = self.alloc(struct_size, false).unwrap()
-            }
+        if size >= struct_size * 2 && align(struct_size) != size {
+            struct_addr = self.alloc(struct_size, is_kernel).unwrap();
             free_cnt = total_size / size;
         }
         // 如果较小，则直接放置在申请的页表内

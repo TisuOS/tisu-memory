@@ -30,7 +30,7 @@ impl Bitmap {
     /// 初始化位图，仅当结构体放置在堆所在的页表时调用
     pub fn init(&mut self, addr : *mut u8, total_cnt : usize, free_cnt : usize, ){
         self.use_cnt = total_cnt - free_cnt;
-        self.search_idx = self.use_cnt / 8;
+        self.search_idx = self.use_cnt;
         self.free_cnt = free_cnt;
         self.total_cnt = total_cnt;
         self.addr = addr;
